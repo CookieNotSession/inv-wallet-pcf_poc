@@ -1,0 +1,25 @@
+---
+spring:
+  profiles:
+    active: local
+  application:
+    name: inv-cache
+  cloud:
+    config:
+      discovery.enabled: true
+      discovery.serviceId: config-server  
+  cache:
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=60s
+    type: caffeine
+    cache-names:
+      - userdata
+      
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8010/eureka/          
+
+server:
+  port: ${port:8006}
+ 

@@ -1,0 +1,19 @@
+apiVersion: configServer/v1
+kind: Deployment
+metadata:
+  name: inv-config-server
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: inv-config-server
+    spec:
+      containers:
+      - name: inv-config-server
+        image: registry.gitlab.com/bluefet/inv-wallet/inv-config-server
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8020
+      imagePullSecrets:
+        - name: registry.gitlab.com

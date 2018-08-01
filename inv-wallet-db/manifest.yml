@@ -1,0 +1,12 @@
+---
+applications:
+ - name: inv-wallet-db
+   path: target/inv-wallet-db-0.0.1-SNAPSHOT.jar
+   buildpack: https://github.com/cloudfoundry/java-buildpack.git
+   memory: 1G
+   services:
+      - inv-config-server
+      - inv-registry
+      - cf-spring-db
+   env:
+      JAVA_OPTS: -Dspring.profiles.active=dev -Duser.timezone=UTC   

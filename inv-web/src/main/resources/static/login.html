@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>電子發票管理系統</title>
+  <!-- plugins:css -->
+  <link rel="stylesheet" href="./vendors/iconfonts/mdi/css/materialdesignicons.min.css">
+  <link rel="stylesheet" href="./vendors/iconfonts/puse-icons-feather/feather.css">
+  <link rel="stylesheet" href="./vendors/css/vendor.bundle.base.css">
+  <link rel="stylesheet" href="./vendors/css/vendor.bundle.addons.css">
+  <!-- endinject -->
+  <!-- plugin css for this page -->
+  <!-- End plugin css for this page -->
+  <!-- inject:css -->
+  <link rel="stylesheet" href="./css/style.css">
+  <!-- endinject -->
+  <link rel="shortcut icon" href="./images/favicon.png" />
+
+  <!-- jQuery -->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <!-- e-invoice script -->
+  <script type="text/javascript">
+    
+
+    // 資料物件
+    // [使用者資料]
+    var userPorfile = {}; 
+
+    // ajax 的介面及實作
+    var ajaxProcessor = function(path, data, callback, async) {
+      // POST
+      $.ajax({
+        "url": path,
+        "context": document.body,
+        "data": data,
+        "processData": true,
+        "cache": false,
+        "async": async
+      }).done(callback);
+    };
+
+    var login  = function() {
+      // 使用者資料查詢
+      ajaxProcessor(
+        // path
+        "./user/login", 
+        // params
+        {
+          "username": $("#username").val(),
+          "password": $("#password").val()
+        },
+        function(data) {
+          if(data!=null && data!="") {
+            var loadedUserPorfile = eval("("+data+")");
+            console.log(loadedUserPorfile);
+            window.location.replace("./dashboard.html?user="+loadedUserPorfile.username);
+          } else {
+            $("#warning").css("display","block");
+          }
+        }, true
+      );
+    };
+
+    // 網頁載入後的初始化腳本
+    $(document).ready(function() {
+
+    });
+
+
+
+  </script>
+
+</head>
+
+<body>
+  <div class="container-scroller">
+    <div class="container-fluid page-body-wrapper full-page-wrapper auth-page">
+      <div class="content-wrapper d-flex align-items-center auth auth-bg-1 theme-one">
+        <div class="row w-100">
+          <div class="col-lg-4 mx-auto">
+            
+            <div class="auto-form-wrapper">
+              <form action="#">
+                <div class="form-group">
+                  <label class="label">帳號 測試帳號：user1(帳密相同)</label>
+                  <div class="input-group">
+                    <input id="username" type="text" class="form-control" placeholder="請輸入測試用使用者名稱 user1 (帳密相同)">
+                    <div class="input-group-append">
+                      <span class="input-group-text">
+                        <i class="mdi mdi-check-circle-outline"></i>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="label">密碼</label>
+                  <div class="input-group">
+                    <input id="password" type="password" class="form-control" placeholder="請輸入密碼">
+                    <div class="input-group-append">
+                      <span class="input-group-text">
+                        <i class="mdi mdi-check-circle-outline"></i>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-body" id="warning" style="display: none;">
+                  <blockquote class="blockquote blockquote-primary">
+                    <footer class="blockquote-footer">帳號或密碼錯誤</footer>
+                  </blockquote>
+                </div>
+                <div class="form-group">
+                  <button class="btn btn-primary submit-btn btn-block" onClick="login()">登入</button>
+                </div>
+                <div class="form-group d-flex justify-content-between">
+                  <div class="form-check form-check-flat mt-0">
+                    <label class="form-check-label">
+                      <input type="checkbox" class="form-check-input" checked> 請讓我保持登入
+                    </label>
+                  </div>
+                  <a href="#" class="text-small forgot-password text-black">忘記密碼</a>
+                </div>
+                <div class="text-block text-center my-3">
+                  <span class="text-small font-weight-semibold">還沒加入會員嗎 ?</span>
+                  <a href="register.html" class="text-black text-small">註冊新帳號</a>
+                </div>
+              </form>
+            </div>
+            <p class="footer-text text-center">copyright © 2018 電子發票管理系統 POC.</p>
+          </div>
+        </div>
+      </div>
+      <!-- content-wrapper ends -->
+    </div>
+    <!-- page-body-wrapper ends -->
+  </div>
+  <!-- container-scroller -->
+  <!-- plugins:js -->
+  <script src="./vendors/js/vendor.bundle.base.js"></script>
+  <script src="./vendors/js/vendor.bundle.addons.js"></script>
+  <!-- endinject -->
+  <!-- inject:js -->
+  <script src="./js/off-canvas.js"></script>
+  <script src="./js/hoverable-collapse.js"></script>
+  <script src="./js/misc.js"></script>
+  <script src="./js/settings.js"></script>
+  <script src="./js/todolist.js"></script>
+  <!-- endinject -->
+</body>
+
+</html>

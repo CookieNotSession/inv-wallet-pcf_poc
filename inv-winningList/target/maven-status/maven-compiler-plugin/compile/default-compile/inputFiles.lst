@@ -1,0 +1,10 @@
+/Users/cookiehiker/inv-wallet-pcf_poc/inv-winningList/src/main/java/com/test/inv/repo/AccessLogRepository.java
+/Users/cookiehiker/inv-wallet-pcf_poc/inv-winningList/src/main/java/com/test/inv/winning/SpringCloudApplication.java
+/Users/cookiehiker/inv-wallet-pcf_poc/inv-winningList/src/main/java/com/test/inv/winning/ctl/AdapterRemoteHystrix.java
+/Users/cookiehiker/inv-wallet-pcf_poc/inv-winningList/src/main/java/com/test/inv/winning/ctl/AdapterRemote.java
+/Users/cookiehiker/inv-wallet-pcf_poc/inv-winningList/src/main/java/com/test/inv/winning/ctl/ApiController.java
+/Users/cookiehiker/inv-wallet-pcf_poc/inv-winningList/src/main/java/com/test/inv/entity/AccessLog.java
+/Users/cookiehiker/inv-wallet-pcf_poc/inv-winningList/src/main/java/com/test/inv/winning/InvMemberApplication.java
+/Users/cookiehiker/inv-wallet-pcf_poc/inv-winningList/src/main/java/com/test/inv/repo/WinningListRepository.java
+/Users/cookiehiker/inv-wallet-pcf_poc/inv-winningList/src/main/java/com/test/inv/entity/WinningList.java
+/Users/cookiehiker/inv-wallet-pcf_poc/inv-winningList/src/main/java/com/test/inv/winning/service/WinningListService.java

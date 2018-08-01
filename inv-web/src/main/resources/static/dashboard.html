@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>電子發票管理系統</title>
+  <!-- plugins:css -->
+  <link rel="stylesheet" href="vendors/iconfonts/mdi/css/materialdesignicons.min.css">
+  <link rel="stylesheet" href="vendors/css/vendor.bundle.base.css">
+  <link rel="stylesheet" href="vendors/css/vendor.bundle.addons.css">
+  <!-- endinject -->
+  <!-- plugin css for this page -->
+  <!-- End plugin css for this page -->
+  <!-- inject:css -->
+  <link rel="stylesheet" href="css/style.css">
+  <!-- endinject -->
+  <link rel="shortcut icon" href="images/favicon.png" />
+  <!-- jQuery -->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <!-- e-invoice script -->
+  <script type="text/javascript">
+    
+
+    // 資料物件
+    // [使用者資料]
+    var userPorfile = {}; 
+    // [查詢結果] 指定載具電子發票清單
+    var invListTableDetails = {};
+    // [查詢結果] 指定載具，中獎電子發票清單
+    var invWinListTableDetails = {};
+
+    // 載入使用者資訊
+    var setUserPofile = function(_userprofile) {
+      userPorfile = _userprofile;
+      $("#username").html(userPorfile.name);
+      var cardName = (userPorfile.cardType == "3J0002") ? "手機條碼" : "其他";
+      $("#container").html(cardName);
+      $("#startDate").val(userPorfile.startDate);
+      $("#endDate").val(userPorfile.endDate);
+    };
+
+    // 渲染表格的函數
+    var renderTableRowsWithPage = function(view, einvliceList, assignPageNumber) {
+      
+      // 每頁筆數要多少
+      var perPageNum = 10;
+      // 資料表格 HTML
+      var tableResult = "";
+      // 分頁表格 HTML
+      var tablePaginationResult = "";
+
+      // 資料表格內容
+      for(
+        var i=(assignPageNumber-1)*perPageNum; einvliceList!=null && i<assignPageNumber*perPageNum && i<einvliceList.length; i++
+      ) {
+        var invoice = einvliceList[i];
+        var rowNum = (invoice.rowNum!=null) ? invoice.rowNum : "-";
+        var invNum = invoice.invNum;
+        var invPeriod = invoice.invPeriod;
+        var amount = (invoice.amount!=null) ? invoice.amount : "-";
+        var invDate = invPeriod;
+        if(invoice.invDate!=null) {
+          if(invoice.invDate.year==null){
+            // 直接顯示日期即可
+            invDate = invoice.invDate;
+          } else {
+            // 需要組合日期
+            invDate = invoice.invDate.year+"/"+invoice.invDate.month+"/"+invoice.invDate.day;
+          }
+        } else {
+          // 沒有日期，預設拿期數
+          // invDate = invPeriod;
+        }
+        var invTime = invDate + "&nbsp;" + invoice.invoiceTime;
+        var sellerName = invoice.sellerName;
+        // 發票尚未開立
+        if(sellerName == null) {
+          sellerName = invoice.invStatus;
+        }
+        tableResult += "<tr><td>"+rowNum+"</td><td>"+invNum+"</td><td>"+invPeriod+"</td><td>"+invTime+"</td><td>"+amount+"</td><td>"+sellerName+"</td></tr>";
+      }
+      
+      // 下面的分頁，按了就重新渲染一次表格
+      for(
+        var i=0; einvliceList!=null && (i*perPageNum) < einvliceList.length; i++
+      ) {
+        var currentPageNumber = i+1;
+        if(currentPageNumber==assignPageNumber) {
+          tablePaginationResult += "<li class=\"page-item active\"><a class=\"page-link\" href=\"#\">"+currentPageNumber+"<span class=\"sr-only\">(current)</span></a></li>";
+        } else {
+          tablePaginationResult += "<li class=\"page-item\"><a class=\"page-link\" href=\"javascript:renderTableRowsWithPage('"+view+"',"+view+"Details,"+currentPageNumber+");\">"+currentPageNumber+"</a></li>";
+        }
+      }
+
+      // 渲染表格 HTML
+      $("#"+view).html(tableResult);
+      // 渲染分頁 HTML
+      $("#"+view + "Pagination").html(tablePaginationResult);
+
+    };
+
+    // 渲染指定載具發票表頭清單
+    var renderInvocieListByContriner = function(data) {
+      var iList = eval("(" + data + ")");
+      var einvliceList = iList.details;
+      invListTableDetails = einvliceList;
+      renderTableRowsWithPage("invListTable", invListTableDetails, 1);
+      $("#einvoiceNumber").html(einvliceList.length);
+      $("#einvoiceImportNumber").html(einvliceList.length);
+    };
+
+    // 渲染指定載具中獎發票清單
+    var renderWinInvocieList = function(data) {
+        var iList = eval("(" + data + ")");
+        var tableResult = "";
+        var einvliceList = iList.details;
+        invWinListTableDetails = einvliceList;
+        renderTableRowsWithPage("invWinListTable", invWinListTableDetails, 1);
+
+        var einvoiceWinNumberText = "再接再厲，好運還沒來";
+        // render wording
+        if(einvliceList.length == 0) {
+          // default text
+        } else if(einvliceList.length > 0 && einvliceList.length <= 5) {
+          einvoiceWinNumberText = "你的運氣不錯喔！";
+        } else {
+          einvoiceWinNumberText = "運氣也太好，可以跟我握手嗎？";
+        }
+
+        // $("#invWinListTable").html(tableResult);
+        $("#einvoiceWinNumber").html(einvliceList.length);
+        $("#einvoiceWinNumberText").html(einvoiceWinNumberText);
+    };
+
+    // 查詢單一張發票
+    var renderInvDatail = function() {
+      ajaxProcessor(
+        // path
+        "./qryInvHeader", 
+        // params
+        {
+          "invNum": $("#singleInvoiceNumber").val(),
+          "type": $("#singleInvoiceType").val(),
+          "invDate": $("#singleInvoiceDate").val()
+        },
+        function(data) {
+          if(data!=null && data!="") {
+            var loadedSingleInvoice = eval("("+data+")");
+            console.log(loadedSingleInvoice);
+            renderTableRowsWithPage("singleInvTable", Array(loadedSingleInvoice), 1);
+          }
+        }, true
+      );
+    };
+
+    // 查詢中獎發票清單
+    var renderWinningList = function() {
+      ajaxProcessor(
+        // path
+        "./winningList", 
+        // params
+        {
+          "invTerm": $("#winListPeriod").val()
+        },
+        function(data) {
+          if(data!=null && data!="") {
+            var loadedWinList = eval("("+data+")");
+            console.log(loadedWinList);
+
+            var y = loadedWinList.invoYm.substring(0, 3);
+            var m = eval(loadedWinList.invoYm.substring(3, 5));
+            
+            $("#win_period").html(y+" "+(m-1)+"-"+m+"");
+
+            $("#winningListPeriod").html(y+"年"+(m-1)+"月、"+m+"月");
+            $("#superPrizeNo").html(loadedWinList.superPrizeNo);
+            $("#superPrizeAmt").html(loadedWinList.superPrizeAmt);
+            $("#spcPrizeNo").html(loadedWinList.spcPrizeNo);
+            $("#spcPrizeAmt").html(loadedWinList.spcPrizeAmt);
+            $("#firstPrizeNo1").html(loadedWinList.firstPrizeNo1);
+            $("#firstPrizeNo2").html(loadedWinList.firstPrizeNo2);
+            $("#firstPrizeNo3").html(loadedWinList.firstPrizeNo3);
+            $("#firstPrizeAmt").html(loadedWinList.firstPrizeAmt);
+            $("#sixthPrizeNo1").html(loadedWinList.sixthPrizeNo1);
+            $("#sixthPrizeNo2").html(loadedWinList.sixthPrizeNo2);
+            $("#sixthPrizeNo3").html(loadedWinList.sixthPrizeNo3);
+          }
+        }, true
+      );
+    };
+
+    var initLoad = function() {
+      // 指定載具發票表頭查詢 
+      ajaxProcessor(
+        // path
+        "./carrierInvChk", 
+        // params
+        {
+          "cardType": userPorfile.cardType,
+          "cardNo": userPorfile.cardNo,
+          "startDate": userPorfile.startDate,
+          "endDate": userPorfile.endDate,
+          "onlyWinningInv": "N",
+          "cardEncrypt": userPorfile.cardEncrypt
+        },
+        // callback function
+        renderInvocieListByContriner, true
+      );
+
+      // 指定載具發票表頭查詢 (中獎)
+      ajaxProcessor(
+        // path
+        "./carrierInvChk", 
+        // params
+        {
+          "cardType": userPorfile.cardType,
+          "cardNo": userPorfile.cardNo,
+          "startDate": userPorfile.startDate,
+          "endDate": userPorfile.endDate,
+          "onlyWinningInv": "Y",
+          "cardEncrypt": userPorfile.cardEncrypt
+        },
+        // callback function
+        renderWinInvocieList, true
+      );
+    };
+
+    var updatePeriod = function() {
+      userPorfile.startDate = $("#startDate").val();
+      userPorfile.endDate = $("#endDate").val();
+      initLoad();
+    };
+
+    // ajax 的介面及實作
+    var ajaxProcessor = function(path, data, callback, async) {
+      // POST
+      $.ajax({
+        "url": path,
+        "context": document.body,
+        "data": data,
+        "processData": true,
+        "cache": false,
+        "async": async
+      }).done(callback);
+    };
+
+    // 取得參數 QueryString
+    function getParameterByName(name, url) {
+      if (!url) url = window.location.href;
+      name = name.replace(/[\[\]]/g, '\\$&');
+      var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+          results = regex.exec(url);
+      if (!results) return null;
+      if (!results[2]) return '';
+      return decodeURIComponent(results[2].replace(/\+/g, ' '));
+    }
+
+    // 顯示功能區塊
+    var show = function(idname) {
+		  $("#a1, #b1, #b2, #b3-1, #b3-4, #b4-1, #b4-2").css("display","none");
+		  console.log(idname);
+		  if(idname == "#b1" || idname == "#b2") {
+		  	$(idname).css("display","block");
+		  	$("#a1").css("display","block");
+		  }
+		  if(idname == "#b3") {
+		  	$("#b3-1").css("display","block");
+		  	$("#b3-2").css("display","block");
+		  	console.log("--------");
+		  }
+		  if(idname == "#b4") {
+		  	$("#b4-1").css("display","block");
+		  	$("#b4-2").css("display","block");
+		  }
+	};
+
+    // 網頁載入後的初始化腳本
+    $(document).ready(function() {
+
+      // 使用者資料查詢
+      ajaxProcessor(
+        // path
+        "./user/login", 
+        // params
+        {
+          "username": getParameterByName("user"),
+          "password": getParameterByName("user")
+        },
+        function(data) {
+          if(data!=null && data!="") {
+            var loadedUserPorfile = eval("("+data+")");
+            setUserPofile(loadedUserPorfile);
+          }
+        }, false
+      );
+
+      initLoad();
+
+    });
+
+  </script>
+
+  <style type="text/css">
+  	#a1, #b1, #b2, #b3-1, #b3-2, #b4-1, #b4-2 {
+  		display: none;
+  	}
+  	.pointer {
+  		cursor: pointer;
+  	}
+  </style>
+
+</head>
+
+<body>
+  <div class="container-scroller">
+    <!-- partial:partials/_navbar.html -->
+    <nav class="navbar default-layout col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
+      <div class="text-center navbar-brand-wrapper d-flex align-items-top justify-content-center">
+        <a class="navbar-brand brand-logo" href="javascript:void();">
+          <img src="./images/logo.png" alt="logo" />
+        </a>
+        <a class="navbar-brand brand-logo-mini" href="javascript:void();">
+          <img src="./images/logo-mini.svg" alt="logo" />
+        </a>
+      </div>
+      <div class="navbar-menu-wrapper d-flex align-items-center">
+        <ul class="navbar-nav navbar-nav-left header-links d-none d-md-flex">
+          <li class="nav-item">
+            <a href="javascript:show('#b1')" class="nav-link">電子發票查詢
+              <span class="badge badge-primary ml-1">New</span>
+            </a>
+          </li>
+          <li class="nav-item active">
+            <a href="javascript:show('#b2')" class="nav-link">
+              <i class="mdi mdi-elevation-rise"></i>載具歸戶</a>
+          </li>
+          <li class="nav-item">
+            <a href="javascript:show('#b3')" class="nav-link">
+              <i class="mdi mdi-bookmark-plus-outline"></i>查詢中獎號碼</a>
+          </li>
+          <li class="nav-item">
+            <a href="javascript:show('#b4')" class="nav-link">
+              <i class="mdi mdi-bookmark-plus-outline"></i>查詢中獎號碼</a>
+          </li>
+        </ul>
+        <ul class="navbar-nav navbar-nav-right">
+
+          <li class="nav-item dropdown d-none d-xl-inline-block">
+            <a class="nav-link dropdown-toggle" id="UserDropdown" href="#" data-toggle="dropdown" aria-expanded="false">
+              <span class="profile-text">您好, <span id="username">User</span> !</span>
+              <img class="img-xs rounded-circle" src="images/faces/face1.png" alt="Profile image">
+            </a>
+            <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="UserDropdown">
+              <a class="dropdown-item p-0">
+                <div class="d-flex border-bottom">
+                  <div class="py-3 px-4 d-flex align-items-center justify-content-center">
+                    <i class="mdi mdi-bookmark-plus-outline mr-0 text-gray"></i>
+                  </div>
+                  <div class="py-3 px-4 d-flex align-items-center justify-content-center border-left border-right">
+                    <i class="mdi mdi-account-outline mr-0 text-gray"></i>
+                  </div>
+                  <div class="py-3 px-4 d-flex align-items-center justify-content-center">
+                    <i class="mdi mdi-alarm-check mr-0 text-gray"></i>
+                  </div>
+                </div>
+              </a>
+              <a class="dropdown-item mt-2">
+                Manage Accounts
+              </a>
+              <a class="dropdown-item">
+                Change Password
+              </a>
+              <a class="dropdown-item">
+                Check Inbox
+              </a>
+              <a class="dropdown-item" href="./login.html">
+                Sign Out
+              </a>
+            </div>
+          </li>
+        </ul>
+        <button class="navbar-toggler navbar-toggler-right d-lg-none align-self-center" type="button" data-toggle="offcanvas">
+          <span class="icon-menu"></span>
+        </button>
+      </div>
+    </nav>
+    <!-- partial -->
+    <div class="container-fluid page-body-wrapper">
+      <!-- partial:partials/_sidebar.html -->
+      <nav class="sidebar sidebar-offcanvas" id="sidebar">
+        <ul class="nav">
+          <li class="nav-item">
+            <a class="nav-link" href="javascript:show('#b1')">
+              <i class="menu-icon mdi mdi-television"></i>
+              <span class="menu-title">載具發票表頭查詢</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="javascript:show('#b2')">
+              <i class="menu-icon mdi mdi-television"></i>
+              <span class="menu-title">手機條碼歸戶載具查詢</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="javascript:show('#b3')">
+              <i class="menu-icon mdi mdi-television"></i>
+              <span class="menu-title">查詢發票表頭</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="javascript:show('#b4')">
+              <i class="menu-icon mdi mdi-television"></i>
+              <span class="menu-title">查詢中獎發票號碼清單</span>
+            </a>
+          </li>
+
+        </ul>
+      </nav>
+      <!-- partial -->
+      <div class="main-panel">
+        <div class="content-wrapper">
+          <div class="row">
+            <div class="col-xl-3 col-lg-3 col-md-3 col-sm-6 grid-margin stretch-card pointer" onClick="show('#b1')">
+              <div class="card card-statistics">
+                <div class="card-body">
+                  <div class="clearfix">
+                    <div class="float-left">
+                      <i class="mdi mdi-receipt text-warning icon-lg"></i>
+                    </div>
+                    <div class="float-right">
+                      <p class="mb-0 text-right">特定載具電子發票</p>
+                      <div class="fluid-container">
+                        <h3 class="font-weight-medium text-right mb-0"><span id="einvoiceNumber">0</span>張</h3>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="text-muted mt-3 mb-0">
+                    <i class="mdi mdi-alert-octagon mr-1" aria-hidden="true"></i> 與 65% 的朋友數量差不多
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-3 col-lg-3 col-md-3 col-sm-6 grid-margin stretch-card pointer" onClick="show('#b2')">
+              <div class="card card-statistics">
+                <div class="card-body">
+                  <div class="clearfix">
+                    <div class="float-left">
+                      <i class="mdi mdi-receipt text-warning icon-lg"></i>
+                    </div>
+                    <div class="float-right">
+                      <p class="mb-0 text-right">載具中獎張數</p>
+                      <div class="fluid-container">
+                        <h3 class="font-weight-medium text-right mb-0"><span id="einvoiceWinNumber">0</span> 張</h3>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="text-muted mt-3 mb-0">
+                    <i class="mdi mdi-bookmark-outline mr-1" aria-hidden="true"></i> 
+                    <span id="einvoiceWinNumberText">再接再厲，好運還沒來</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-3 col-lg-3 col-md-3 col-sm-6 grid-margin stretch-card pointer" onClick="show('#b3')">
+              <div class="card card-statistics">
+                <div class="card-body">
+                  <div class="clearfix">
+                    <div class="float-left">
+                      <i class="mdi mdi-poll-box text-success icon-lg"></i>
+                    </div>
+                    <div class="float-right">
+                      <p class="mb-0 text-right">特定交易</p>
+                      <div class="fluid-container">
+                        <h3 class="font-weight-medium text-right mb-0"><span id="einvoiceImportNumber">0</span> 張</h3>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="text-muted mt-3 mb-0">
+                    <i class="mdi mdi-calendar mr-1" aria-hidden="true"></i> 這些是你以前查過交易紀錄
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-3 col-lg-3 col-md-3 col-sm-6 grid-margin stretch-card pointer" onClick="show('#b4')">
+              <div class="card card-statistics">
+                <div class="card-body">
+                  <div class="clearfix">
+                    <div class="float-left">
+                      <i class="mdi mdi-account-location text-info icon-lg"></i>
+                    </div>
+                    <div class="float-right">
+                      <p class="mb-0 text-right">本期中獎號碼</p>
+                      <div class="fluid-container">
+                        <h3 class="font-weight-medium text-right mb-0" id="win_period">10707</h3>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="text-muted mt-3 mb-0">
+                    <i class="mdi mdi-reload mr-1" aria-hidden="true"></i> 歸戶越多累積越快
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+           <div class="row flex-grow">
+             <div class="col-12 grid-margin">
+               <div class="card">
+                 <div class="card-body" id="a1">
+                   <h4 class="card-title">載具查詢的起始結束日期，當前載具為<span id="container"></span></h4>
+                   <p class="card-description">
+                     請指定載具查詢的起始結束日期
+                   </p>
+                   <div class="form-group">
+                     <div class="input-group">
+                       <div class="input-group-prepend">
+                         <span class="input-group-text">查詢開始日期</span>
+                       </div>
+                       <input type="text" class="form-control" placeholder="2018/01/01" aria-label="startDate" aria-describedby="basic-addon1" id="startDate">
+                     </div>
+                   </div>
+                   <div class="form-group">
+                     <div class="input-group">
+                       <div class="input-group-prepend">
+                         <span class="input-group-text">查詢結束日期</span>
+                       </div>
+                       <input type="text" class="form-control" placeholder="2018/07/22" aria-label="endDate" aria-describedby="basic-addon1" id="endDate">
+                     </div>
+                   </div>
+                   <div class="btn btn-success mr-2" onClick="updatePeriod()">更新時間區間</div>
+               </div>
+
+          <div class="row" id="b1">
+            <div class="col-lg-12 grid-margin">
+              <div class="card">
+                <div class="card-body">
+                  <h4 class="card-title">指定載具消費記錄</h4>
+                  <div class="table-responsive">
+                    <table class="table table-bordered">
+                      <thead>
+                        <tr>
+                          <th>
+                            #
+                          </th>
+                          <th>
+                            發票號碼
+                          </th>
+                          <th>
+                            月份
+                          </th>
+                          <th>
+                            消費時間
+                          </th>
+                          <th>
+                            發票金額
+                          </th>
+                          <th>
+                            商家名稱
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody id="invListTable">
+                        
+                      </tbody>
+                    </table>
+
+                    <br />
+                    <nav>
+                      <ul class="pagination" id="invListTablePagination">
+
+                      </ul>
+                    </nav>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row" id="b2">
+            <div class="col-lg-12 grid-margin">
+              <div class="card">
+                <div class="card-body">
+                  <h4 class="card-title">指定載具中獎名單</h4>
+                  <div class="table-responsive">
+                    <table class="table table-bordered">
+                      <thead>
+                        <tr>
+                          <th>
+                            #
+                          </th>
+                          <th>
+                            發票號碼
+                          </th>
+                          <th>
+                            月份
+                          </th>
+                          <th>
+                            消費時間
+                          </th>
+                          <th>
+                            發票金額
+                          </th>
+                          <th>
+                            商家名稱
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody id="invWinListTable">
+                        
+                      </tbody>
+                    </table>
+
+                    <br />
+                    <nav>
+                      <ul class="pagination" id="invWinListTablePagination">
+
+                      </ul>
+                    </nav>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row" id="b3-1">
+            <div class="col-lg-12 grid-margin">
+            <div class="card">
+              <div class="card-body">
+                <h4 class="card-title">查詢發票明細</h4>
+                <p class="card-description">
+                  請輸入發票資訊，當日發票可能尚未入帳：
+                </p>
+                <form class="forms-sample">
+                  <div class="form-group">
+                    <label for="exampleInputEmail1">發票號碼</label>
+                    <input class="form-control" id="singleInvoiceNumber" value="FA06436547" placeholder="FA06436547">
+                  </div>
+                  <div class="form-group">
+                    <div class="form-group row">
+                      <label class="col-sm-3 col-form-label">條碼別</label>
+                      <div class="col-sm-9">
+                        <select class="form-control" id="singleInvoiceType">
+                          <option>Barcode</option>
+                          <option>QRCode</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <div class="form-group row">
+                      <label class="col-sm-3 col-form-label">發票日期</label>
+                      <div class="col-sm-9">
+                        <input class="form-control" placeholder="2018/01/01" value="2018/07/22" id="singleInvoiceDate" />
+                      </div>
+                    </div>
+                  </div>
+                  <div class="btn btn-success mr-2" onClick="renderInvDatail()">查詢</div>
+                </form>
+              </div>
+            </div>
+            </div>
+          </div>
+
+
+          <div class="row" id="b3-2">
+            <div class="col-lg-12 grid-margin">
+              <div class="card">
+                <div class="card-body">
+                  <h4 class="card-title">查詢發票明細</h4>
+                  <div class="table-responsive">
+                    <table class="table table-bordered">
+                      <thead>
+                        <tr>
+                          <th>
+                            #
+                          </th>
+                          <th>
+                            發票號碼
+                          </th>
+                          <th>
+                            月份
+                          </th>
+                          <th>
+                            消費時間
+                          </th>
+                          <th>
+                            發票金額
+                          </th>
+                          <th>
+                            商家名稱
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody id="singleInvTable">
+                        
+                      </tbody>
+                    </table>
+
+                    <br />
+                    <nav>
+                      <ul class="pagination" id="singleInvTablePagination">
+
+                      </ul>
+                    </nav>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row" id="b4-1">
+            <div class="col-lg-12 grid-margin">
+            <div class="card">
+              <div class="card-body">
+                <h4 class="card-title">查詢中獎發票清單</h4>
+                <p class="card-description">
+                  查詢開獎期別，年分為民國年，月份必須為雙數月. 格式(yyyMM)
+                </p>
+                <form class="forms-sample">
+                  <div class="form-group">
+                    <div class="form-group row">
+                      <label class="col-sm-3 col-form-label">發票期數</label>
+                      <div class="col-sm-9">
+                        <select class="form-control" id="winListPeriod">
+                          <option>10704</option>
+                          <option>10702</option>
+                          <option>10612</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="btn btn-success mr-2" onClick="renderWinningList()">查詢</div>
+                </form>
+              </div>
+            </div>
+            </div>
+          </div>
+
+          <div class="row" id="b4-2">
+            <div class="col-lg-12 grid-margin stretch-card">
+              <div class="card">
+                <div class="card-body">
+                  <h4 class="card-title">統一發票票<span id="winningListPeriod"></span></h4>
+                  <div class="table-responsive">
+                    <table class="table">
+                      <thead>
+                        <tr>
+                          <th>獎別</th>
+                          <th>號碼</th>
+                          <th>獎項</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>特別獎</td>
+                          <td><span id="superPrizeNo"></span></td>
+                          <td>
+                            八位數號碼與上列號碼相同者獎金一千萬元
+                            <label class="badge badge-danger"><span id="superPrizeAmt"></span></label>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>特獎</td>
+                          <td><span id="spcPrizeNo"></span></td>
+                          <td>
+                            八位數號碼與上列號碼相同者獎金二百萬元
+                            <label class="badge badge-danger"><span id="spcPrizeAmt"></span></label>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>頭獎</td>
+                          <td>
+                            <span id="firstPrizeNo1"></span><br />
+                            <span id="firstPrizeNo1"></span><br />
+                            <span id="firstPrizeNo1"></span><br />
+                          </td>
+                          <td>
+                            八位數號碼與上列號碼相同者獎金二十萬元
+                            <label class="badge badge-danger"><span id="firstPrizeAmt"></span></label>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>二獎</td>
+                          <td></td>
+                          <td>末七碼與頭獎相同者各得獎金四萬元</td>
+                        </tr>
+                        <tr>
+                          <td>三獎</td>
+                          <td></td>
+                          <td>末七碼與頭獎相同者各得獎金四萬元</td>
+                        </tr>
+                        <tr>
+                          <td>四獎</td>
+                          <td></td>
+                          <td>末七碼與頭獎相同者各得獎金四萬元</td>
+                        </tr>
+                        <tr>
+                          <td>五獎</td>
+                          <td></td>
+                          <td>末七碼與頭獎相同者各得獎金四萬元</td>
+                        </tr>
+                        <tr>
+                          <td>六獎</td>
+                          <td></td>
+                          <td>末七碼與頭獎相同者各得獎金四萬元</td>
+                        </tr>
+                        <tr>
+                          <td>增開六獎</td>
+                          <td><span id="sixthPrizeNo1"></span>,<span id="sixthPrizeNo2"></span>,<span id="sixthPrizeNo3"></span></td>
+                          <td>發票收執聯末3位數號碼與上列號碼相同者，獎金2百元</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+        </div>
+        <!-- content-wrapper ends -->
+        <!-- partial:partials/_footer.html -->
+        <footer class="footer">
+          <div class="container-fluid clearfix">
+            <span class="text-muted d-block text-center text-sm-left d-sm-inline-block">Copyright © 2018
+              <a href="http://www.bootstrapdash.com/" target="_blank">Bootstrapdash</a>. All rights reserved.</span>
+            <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center">Hand-crafted & made with
+              <i class="mdi mdi-heart text-danger"></i>
+            </span>
+          </div>
+        </footer>
+        <!-- partial -->
+      </div>
+      <!-- main-panel ends -->
+    </div>
+    <!-- page-body-wrapper ends -->
+  </div>
+  <!-- container-scroller -->
+
+  <!-- plugins:js -->
+  <script src="vendors/js/vendor.bundle.base.js"></script>
+  <script src="vendors/js/vendor.bundle.addons.js"></script>
+  <!-- endinject -->
+  <!-- Plugin js for this page-->
+  <!-- End plugin js for this page-->
+  <!-- inject:js -->
+  <script src="js/off-canvas.js"></script>
+  <script src="js/misc.js"></script>
+  <!-- endinject -->
+  <!-- Custom js for this page-->
+  <script src="js/dashboard.js"></script>
+  <!-- End custom js for this page-->
+</body>
+
+</html>

@@ -1,0 +1,9 @@
+---
+spring:
+  profiles:
+    active: local
+    
+adapter:
+  serverUrl: http://INV-ADAPTER/api/inv-query
+  carrierInvChk: /carrierInvChk
+  winningList: /winningList

@@ -1,0 +1,4 @@
+---
+adapter:
+  name: INV-ADAPTER
+  winningList: /api/inv-query/winningList

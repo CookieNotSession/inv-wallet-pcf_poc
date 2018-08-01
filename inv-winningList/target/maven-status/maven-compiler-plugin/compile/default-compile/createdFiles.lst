@@ -1,0 +1,10 @@
+com/test/inv/winning/service/WinningListService.class
+com/test/inv/winning/ctl/AdapterRemote.class
+com/test/inv/repo/WinningListRepository.class
+com/test/inv/winning/ctl/ApiController.class
+com/test/inv/entity/AccessLog.class
+com/test/inv/entity/WinningList.class
+com/test/inv/winning/ctl/AdapterRemoteHystrix.class
+com/test/inv/repo/AccessLogRepository.class
+com/test/inv/winning/SpringCloudApplication.class
+com/test/inv/winning/InvMemberApplication.class

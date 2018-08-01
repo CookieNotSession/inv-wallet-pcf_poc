@@ -1,0 +1,22 @@
+---
+spring:
+  profiles: local
+  datasource:
+    driverClassName: com.mysql.jdbc.Driver
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://35.224.130.152:3306/test?user=root&password=root&autoReconnect=true&useSSL=false
+    username: root
+    password: root
+  jpa:
+    show-sql: true    
+    properties.hibernate.dialect: org.hibernate.dialect.MySQL5InnoDBDialect
+    hibernate.ddl-auto: update
+
+env:
+  server: LOCAL
+  
+mock:
+  users: 1|richard|3J0002|/B27.PO2|ieoasl2180&
+
+  
+

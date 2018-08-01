@@ -1,0 +1,1 @@
+java -jar inv-register/target/inv-register-0.0.1-SNAPSHOT.jar

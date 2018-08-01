@@ -1,0 +1,1 @@
+java -jar inv-zuul/target/inv-zuul-0.0.1-SNAPSHOT.jar

@@ -1,0 +1,30 @@
+---
+spring:
+  profiles:
+    active: local
+  application:
+    name: inv-hystrix
+  cloud:
+    config:
+      discovery.enabled: true
+      discovery.serviceId: config-server  
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8010/eureka/          
+
+server:
+  port: ${port:8008}
+  
+feign:
+  hystrix:
+    enabled: true  
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: hystrix.stream   
+      
+      

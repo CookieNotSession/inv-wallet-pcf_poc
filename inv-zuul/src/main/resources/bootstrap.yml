@@ -1,0 +1,36 @@
+---
+spring:
+  profiles:
+    active: local
+  application:
+    name: inv-zuul
+  cloud:
+    config:
+      discovery.enabled: true
+      discovery.serviceId: config-server  
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8010/eureka/          
+
+server:
+  port: ${port:8080}
+
+  
+zuul:
+    host:
+        connect-timeout-millis: 10000
+        socket-timeout-millis: 60000
+
+hystrix:
+    command:
+        default:
+            execution:
+                isolation:
+                    thread:
+                        timeoutInMilliseconds: 60000
+ribbon:
+  ConnectTimeout: 10000
+  ReadTimeout: 10000                       
+                        

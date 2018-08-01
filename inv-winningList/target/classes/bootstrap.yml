@@ -1,0 +1,53 @@
+---
+spring:
+  profiles: local
+  application:
+    name: inv-winning
+  cloud:
+    config:
+      discovery.enabled: true
+      discovery.serviceId: config-server  
+  cache:
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=10s
+    type: caffeine
+    cache-names:
+      - winning
+      
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8010/eureka/          
+
+server:
+  port: ${port:8030}
+  
+feign:
+  hystrix:
+    enabled: true
+
+management.endpoints.web.exposure.include: '*'
+# 刷新时，关闭安全验证
+management.security.enabled: false    
+
+---
+spring:
+  profiles: pcf
+  application:
+    name: inv-winning
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+  cache:
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=10s
+    type: caffeine
+    cache-names:
+      - winning
+feign:
+  hystrix:
+    enabled: true
+
+management.endpoints.web.exposure.include: '*'
+# 刷新时，关闭安全验证
+management.security.enabled: false
+  

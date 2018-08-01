@@ -1,0 +1,32 @@
+---
+resources:
+- name: github-repo
+  type: git
+  check_every: 20s
+  source:
+    uri: https://github.com/CookieNotSession/inv-adapter.git
+    branch: master
+- name: cloudfoundry
+  type: cf
+  source:
+    api: https://api.run.pivotal.io
+    username: cookie040667@gmail.com
+    password: Bing1103@
+    organization: cookie040667-org
+    space: development
+    skip_cert_check: true
+
+
+jobs:
+- name: Build
+  public: true
+  plan:
+  - get: github-repo
+    trigger: true
+  - task: maven-install
+    file: github-repo/mvn.yml
+  - put: cloudfoundry
+    params:
+      manifest: github-repo/manifest.yml
+      buildpack: java_buildpack
+      path: target-web/inv-adapter-0.0.1-SNAPSHOT.jar

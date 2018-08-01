@@ -1,0 +1,19 @@
+---
+spring:
+  profiles: local
+  rabbitmq:
+    host: 35.237.60.245
+    port: 5672
+    username: admin
+    password: 1qaz2wsx  
+#    virtual-host: /
+#    listener.simple.acknowledge-mode: manual    
+  # 开启消息跟踪
+  cloud: 
+    bus:
+      trace.enabled: false    
+env:
+  server: LOCAL
+  
+app:
+ text: Welcome to AAAAA platform! ~  

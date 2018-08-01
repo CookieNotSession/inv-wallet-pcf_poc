@@ -1,0 +1,33 @@
+---
+spring:
+  profiles:
+    active: local
+  application:
+    name: inv-qryInvHeader
+  cloud:
+    config:
+      discovery.enabled: true
+      discovery.serviceId: config-server  
+  cache:
+    caffeine:
+      spec: maximumSize=500,expireAfterWrite=10s
+    type: caffeine
+    cache-names:
+      - invheader
+      
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8010/eureka/          
+
+server:
+  port: ${port:8031}
+  
+feign:
+  hystrix:
+    enabled: true
+
+management.endpoints.web.exposure.include: '*'
+# 刷新时，关闭安全验证
+management.security.enabled: false      
+

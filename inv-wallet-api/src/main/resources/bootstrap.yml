@@ -1,0 +1,18 @@
+---
+spring:
+  profiles:
+    active: local
+  application:
+    name: inv-wallet-api
+  cloud:
+    config:
+      discovery.enabled: true
+      discovery.serviceId: config-server  
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8010/eureka/          
+
+server:
+  port: ${port:8003}
