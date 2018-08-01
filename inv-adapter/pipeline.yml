@@ -24,9 +24,9 @@ jobs:
   - get: github-repo
     trigger: true
   - task: maven-install
-    file: github-repo/mvn.yml
+    file: github-repo/inv-adapter/mvn.yml
   - put: cloudfoundry
     params:
-      manifest: github-repo/manifest.yml
+      manifest: github-repo/inv-adapter/manifest.yml
       buildpack: java_buildpack
       path: target-web/inv-adapter-0.0.1-SNAPSHOT.jar
