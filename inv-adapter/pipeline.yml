@@ -4,7 +4,7 @@ resources:
   type: git
   check_every: 20s
   source:
-    uri: https://github.com/CookieNotSession/inv-adapter.git
+    uri: https://github.com/CookieNotSession/inv-wallet-pcf_poc.git
     branch: master
 - name: cloudfoundry
   type: cf
