@@ -1,7 +1,7 @@
 ---
 applications:
  - name: inv-adapter
-   path: target/inv-adapter-0.0.1-SNAPSHOT.jar
+#   path: target/inv-adapter-0.0.1-SNAPSHOT.jar
    buildpack: https://github.com/cloudfoundry/java-buildpack.git
    memory: 1G
    services:
