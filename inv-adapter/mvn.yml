@@ -16,7 +16,7 @@ run:
   args:
   - -exc
   - |
-    cd ./github-repo
+    cd ./github-repo/inv-adapter
     mvn clean package
     ls -alR
     cp ./target/inv-adapter-0.0.1-SNAPSHOT.jar ../target-web/inv-adapter-0.0.1-SNAPSHOT.jar
